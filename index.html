@@ -1,14 +1,197 @@
- <!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>My Telegram Web App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Telegram Mini App</title>
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #f0f0f0; padding-top: 50px; }
-        h1 { color: #0088cc; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #0088cc; font-size: 24px; }
+        .coin-section {
+            background: #fef9e7;
+            border: 2px solid #f39c12;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .game-box {
+            background: #f2f4f4;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .btn {
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn:hover { background-color: #006699; }
+        .options-btn {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            text-align: left;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .options-btn:hover { background: #e5f1fa; }
+        .nav-tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+        .tab-link {
+            color: #0088cc;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <h1>Welcome to my Telegram Web App!</h1>
-    <p>This is my first web app hosted on GitHub Pages.</p>
+
+<div class="container">
+    <h1 id="user-greeting">Welcome!</h1>
+    
+    <!-- Coin Balance -->
+    <div class="coin-section">
+        🪙 Coins: <span id="coin-count">0</span>
+    </div>
+
+    <!-- Main Content Area -->
+    <div id="main-content">
+        <!-- Quiz Game Section -->
+        <div class="game-box">
+            <h3>🧠 Daily Quiz</h3>
+            <p id="question">Loading question...</p>
+            <div id="options-container"></div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Tabs -->
+    <div class="nav-tabs">
+        <span class="tab-link" onclick="showSection('game')">🎮 Game</span>
+        <span class="tab-link" onclick="showSection('leaderboard')">🏆 Rank</span>
+        <span class="tab-link" onclick="showSection('help')">❓ Help</span>
+    </div>
+</div>
+
+<script>
+    // Initialize Telegram Web App
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // App ko full screen karne ke liye
+
+    // App State
+    let coins = parseInt(localStorage.getItem('user_coins')) || 0;
+    document.getElementById('coin-count').innerText = coins;
+
+    // Display Telegram User Name if available
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        document.getElementById('user-greeting').innerText = `Hello, ${tg.initDataUnsafe.user.first_name}!`;
+    }
+
+    // Simple Quiz Data
+    const quizData = [
+        { q: "What is 5 + 5?", options: ["10", "12", "15"], answer: "10" },
+        { q: "Which planet is known as Red Planet?", options: ["Earth", "Mars", "Venus"], answer: "Mars" }
+    ];
+    let currentQuizIndex = 0;
+
+    function loadQuiz() {
+        const currentQuiz = quizData[currentQuizIndex];
+        document.getElementById('question').innerText = currentQuiz.q;
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+
+        currentQuiz.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'options-btn';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(opt, currentQuiz.answer);
+            container.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selected, correct) {
+        if (selected === correct) {
+            coins += 10; // Sahi jawab par 10 coins
+            localStorage.setItem('user_coins', coins);
+            document.getElementById('coin-count').innerText = coins;
+            alert("🎉 Correct! You earned 10 coins.");
+        } else {
+            alert("❌ Wrong answer! Try again.");
+        }
+        // Next question par jaane ke liye
+        currentQuizIndex = (currentQuizIndex + 1) % quizData.length;
+        loadQuiz();
+    }
+
+    // Navigation Logic
+    function showSection(section) {
+        const contentDiv = document.getElementById('main-content');
+        if (section === 'game') {
+            contentDiv.innerHTML = `
+                <div class="game-box">
+                    <h3>🧠 Daily Quiz</h3>
+                    <p id="question">Loading...</p>
+                    <div id="options-container"></div>
+                </div>
+            `;
+            loadQuiz();
+        } else if (section === 'leaderboard') {
+            contentDiv.innerHTML = `
+                <div class="game-box">
+                    <h3>🏆 Top Users Leaderboard</h3>
+                    <p>1. Amit - 🪙 5000</p>
+                    <p>2. Rahul - 🪙 4200</p>
+                    <p>3. You (Local) - 🪙 ${coins}</p>
+                    <small style="color:gray;">*Real-time rank will sync after database connection.</small>
+                </div>
+            `;
+        } else if (section === 'help') {
+            contentDiv.innerHTML = `
+                <div class="game-box">
+                    <h3>❓ Help & Info</h3>
+                    <p><b>How to earn?</b> Play quizzes daily to earn coins.</p>
+                    <p><b>What are coins for?</b> Soon you can convert them to rewards or Telegram Stars!</p>
+                </div>
+            `;
+        }
+    }
+
+    // Initial Load
+    loadQuiz();
+</script>
 </body>
-</html>
+ </html>
+ 
