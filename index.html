@@ -3,195 +3,399 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Telegram Mini App</title>
-    <!-- Telegram Web App SDK -->
+    <title>Mega Quiz & Word Game Arena</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --container-bg: #16213e;
+            --accent-color: #0f3460;
+            --text-color: #e94560;
+            --light-text: #ffffff;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f6f9;
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--light-text);
             margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        h1 { color: #0088cc; font-size: 24px; }
-        .coin-section {
-            background: #fef9e7;
-            border: 2px solid #f39c12;
             padding: 10px;
-            border-radius: 10px;
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
         }
-        .game-box {
-            background: #f2f4f4;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: left;
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--container-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-sizing: border-box;
         }
-        .btn {
-            background-color: #0088cc;
+
+        h1, h2, h3 {
+            text-align: center;
+            color: var(--text-color);
+            margin-top: 0;
+        }
+
+        .screen { display: none; }
+        .active { display: block; }
+
+        /* Buttons & Inputs */
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 2px solid var(--accent-color);
+            background: #0f3460;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--text-color);
             color: white;
             border: none;
-            padding: 10px 15px;
-            font-size: 16px;
+            padding: 12px;
+            margin: 8px 0;
             border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .btn:hover { background-color: #006699; }
-        .options-btn {
-            background: white;
-            border: 1px solid #ccc;
-            padding: 8px;
-            margin: 5px 0;
-            width: 100%;
-            text-align: left;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .options-btn:hover { background: #e5f1fa; }
-        .nav-tabs {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-        }
-        .tab-link {
-            color: #0088cc;
-            text-decoration: none;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+        
+        .btn-secondary { background-color: var(--accent-color); }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        /* Options Grid */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .option-btn {
+            background: #0f3460;
+            text-align: left;
+            padding: 15px;
+        }
+
+        /* Leaderboard Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        th { color: var(--text-color); }
+
+        /* Grid for Game Selection */
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1 id="user-greeting">Welcome!</h1>
-    
-    <!-- Coin Balance -->
-    <div class="coin-section">
-        🪙 Coins: <span id="coin-count">0</span>
+    <!-- Top Bar Info (Always visible except registration) -->
+    <div id="global-stats" class="stats-bar" style="display:none;">
+        <span id="user-display">👤 User</span>
+        <span>🪙 Coins: <strong id="coin-count">0</strong></span>
     </div>
 
-    <!-- Main Content Area -->
-    <div id="main-content">
-        <!-- Quiz Game Section -->
-        <div class="game-box">
-            <h3>🧠 Daily Quiz</h3>
-            <p id="question">Loading question...</p>
-            <div id="options-container"></div>
+    <!-- 1. REGISTRATION SCREEN -->
+    <div id="screen-register" class="screen active">
+        <h2>🚀 Welcome to Quiz Arena</h2>
+        <p>Apna Username daal kar register karein:</p>
+        <input type="text" id="username-input" placeholder="Enter Username...">
+        <button onclick="registerUser()">Register & Play</button>
+    </div>
+
+    <!-- 2. HOME / GAME MENU SCREEN -->
+    <div id="screen-home" class="screen">
+        <h2>🎮 Select Game Mode</h2>
+        <div class="game-grid">
+            <button class="btn-secondary" onclick="startGame('gk')">🌍 GK Quiz</button>
+            <button class="btn-secondary" onclick="startGame('world')">🗺️ World Quiz</button>
+            <button class="btn-secondary" onclick="startWordGame()">🔤 Word Game</button>
+            <button class="btn-secondary" onclick="startGame('math')">🔢 Math Quiz</button>
+            <button class="btn-secondary" onclick="startGame('science')">🧪 Science Quiz</button>
+        </div>
+        <hr style="border: 1px solid #0f3460; margin: 20px 0;">
+        <button onclick="showLeaderboard()">🏆 Leaderboard & Rank</button>
+        <button class="btn-secondary" onclick="showHelp()">❓ How to Play / Help</button>
+    </div>
+
+    <!-- 3. QUIZ GAME SCREEN (Multi-question, GK, World, Math, Science) -->
+    <div id="screen-quiz" class="screen">
+        <div class="stats-bar">
+            <span id="quiz-category">Category</span>
+            <span id="quiz-progress">Q: 1/5</span>
+        </div>
+        <h3 id="question-text">Question text goes here?</h3>
+        <div id="options-box" class="options-container">
+            <!-- Dynamic Buttons will load here -->
         </div>
     </div>
 
-    <!-- Bottom Navigation Tabs -->
-    <div class="nav-tabs">
-        <span class="tab-link" onclick="showSection('game')">🎮 Game</span>
-        <span class="tab-link" onclick="showSection('leaderboard')">🏆 Rank</span>
-        <span class="tab-link" onclick="showSection('help')">❓ Help</span>
+    <!-- 4. WORD GAME SCREEN -->
+    <div id="screen-word" class="screen">
+        <div class="stats-bar">
+            <span>🔤 Word Puzzle</span>
+            <span>Coins +10</span>
+        </div>
+        <h3>Jumbled Word ko sahi kijiye:</h3>
+        <h2 id="jumbled-text" style="letter-spacing: 5px; color: #fff;">XXXX</h2>
+        <p>Hint: <span id="word-hint" style="font-style: italic; color: #aaa;"></span></p>
+        <input type="text" id="word-answer" placeholder="Apna jawab likho...">
+        <button onclick="checkWordAnswer()">Submit Answer</button>
+        <button class="btn-secondary" onclick="goHome()">Back to Menu</button>
+    </div>
+
+    <!-- 5. LEADERBOARD SCREEN -->
+    <div id="screen-leaderboard" class="screen">
+        <h2>🏆 Top Rankings</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Coins</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                <!-- Data via JS -->
+            </tbody>
+        </table>
+        <br>
+        <button onclick="goHome()">Back to Menu</button>
+    </div>
+
+    <!-- 6. HELP SCREEN -->
+    <div id="screen-help" class="screen">
+        <h2>❓ Help & Rules</h2>
+        <div style="text-align: left; line-height: 1.6;">
+            <p><strong>1. GK & World Quiz:</strong> Har sahi jawab par aapko <b>10 Coins</b> milenge.</p>
+            <p><strong>2. Word Game:</strong> Ulte-pulte shabdon ko sahi karke likhein aur coins jeetein.</p>
+            <p><strong>3. Leaderboard:</strong> Jitne zyada coins, utni upar aapki rank hogi.</p>
+            <p><strong>4. Telegram Integration:</strong> Yeh app Telegram Mini App ke sath fully compatible hai.</p>
+        </div>
+        <button onclick="goHome()">Got it!</button>
     </div>
 </div>
 
 <script>
-    // Initialize Telegram Web App
-    const tg = window.Telegram.WebApp;
-    tg.expand(); // App ko full screen karne ke liye
-
-    // App State
-    let coins = parseInt(localStorage.getItem('user_coins')) || 0;
-    document.getElementById('coin-count').innerText = coins;
-
-    // Display Telegram User Name if available
-    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        document.getElementById('user-greeting').innerText = `Hello, ${tg.initDataUnsafe.user.first_name}!`;
+    // Initialize Telegram WebApp
+    const tg = window.Telegram ? window.Telegram.WebApp : null;
+    if(tg) {
+        tg.expand(); // Full screen open hoga telegram me
+        tg.ready();
     }
 
-    // Simple Quiz Data
-    const quizData = [
-        { q: "What is 5 + 5?", options: ["10", "12", "15"], answer: "10" },
-        { q: "Which planet is known as Red Planet?", options: ["Earth", "Mars", "Venus"], answer: "Mars" }
+    // --- GAME DATA DATABASE ---
+    const quizDatabase = {
+        gk: [
+            { q: "Bharat ki rajdhani kya hai?", o: ["Mumbai", "Delhi", "Kolkata", "Chennai"], a: "Delhi" },
+            { q: "Computer ka brain kise kehte hain?", o: ["RAM", "CPU", "Hard Disk", "Monitor"], a: "CPU" },
+            { q: "Is saal kaun sa saal chal raha hai?", o: ["2024", "2025", "2026", "2027"], a: "2026" }
+        ],
+        world: [
+            { q: "World ka sabse bada ocean kaun sa hai?", o: ["Atlantic", "Indian", "Pacific", "Arctic"], a: "Pacific" },
+            { q: "Statue of Liberty kahan hai?", o: ["Paris", "London", "New York", "Tokyo"], a: "New York" }
+        ],
+        math: [
+            { q: "15 + 25 Kya hoga?", o: ["30", "35", "40", "45"], a: "40" },
+            { q: "9 x 9 Kya hota hai?", o: ["72", "81", "90", "64"], a: "81" }
+        ],
+        science: [
+            { q: "Paani (Water) ka chemical formula kya hai?", o: ["CO2", "H2O", "O2", "NaCl"], a: "H2O" },
+            { q: "Hume oxygen kisse milti hai?", o: ["Plastics", "Trees", "Animals", "Rocks"], a: "Trees" }
+        ]
+    };
+
+    const wordDatabase = [
+        { jumbled: "TEPMUOCR", correct: "computer", hint: "Electronic device" },
+        { jumbled: "ELHTI", correct: "delhi", hint: "Capital of India" },
+        { jumbled: "ALEPP", correct: "apple", hint: "Ek phal (Fruit)" }
     ];
-    let currentQuizIndex = 0;
 
-    function loadQuiz() {
-        const currentQuiz = quizData[currentQuizIndex];
-        document.getElementById('question').innerText = currentQuiz.q;
-        const container = document.getElementById('options-container');
-        container.innerHTML = '';
+    // --- USER STATE ---
+    let currentUser = localStorage.getItem('quiz_username') || "";
+    let currentCoins = parseInt(localStorage.getItem('quiz_coins')) || 0;
+    
+    let currentCategory = "";
+    let currentQuestionIndex = 0;
+    let currentWordObj = {};
 
-        currentQuiz.options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.className = 'options-btn';
+    // Fake Global Users for Leaderboard Demo
+    let dummyLeaderboard = [
+        { name: "Suryakanta", coins: 1200 },
+        { name: "Rahul_Top", coins: 950 },
+        { name: "Amit_AI", coins: 700 }
+    ];
+
+    // --- APP FLOW LOGIC ---
+    window.onload = function() {
+        if(currentUser) {
+            loadDashboard();
+        } else {
+            showScreen('screen-register');
+        }
+    };
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function registerUser() {
+        let name = document.getElementById('username-input').value.trim();
+        if(!name) {
+            alert("Please enter a valid username!");
+            return;
+        }
+        currentUser = name;
+        currentCoins = 100; // Starting Bonus
+        localStorage.setItem('quiz_username', currentUser);
+        localStorage.setItem('quiz_coins', currentCoins);
+        loadDashboard();
+    }
+
+    function loadDashboard() {
+        document.getElementById('global-stats').style.display = 'flex';
+        document.getElementById('user-display').innerText = "👤 " + currentUser;
+        document.getElementById('coin-count').innerText = currentCoins;
+        showScreen('screen-home');
+    }
+
+    function updateCoins(amount) {
+        currentCoins += amount;
+        localStorage.setItem('quiz_coins', currentCoins);
+        document.getElementById('coin-count').innerText = currentCoins;
+    }
+
+    function goHome() {
+        loadDashboard();
+    }
+
+    function showHelp() {
+        showScreen('screen-help');
+    }
+
+    // --- MCQ QUIZ ENGINE ---
+    function startGame(category) {
+        currentCategory = category;
+        currentQuestionIndex = 0;
+        document.getElementById('quiz-category').innerText = category.toUpperCase() + " Quiz";
+        showScreen('screen-quiz');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        let questions = quizDatabase[currentCategory];
+        if(currentQuestionIndex >= questions.length) {
+            alert("🎉 Badhai ho! Game Khatam. Aapne saare questions pure kiye.");
+            goHome();
+            return;
+        }
+
+        document.getElementById('quiz-progress').innerText = `Q: ${currentQuestionIndex + 1}/${questions.length}`;
+        let qData = questions[currentQuestionIndex];
+        document.getElementById('question-text').innerText = qData.q;
+        
+        let optionsBox = document.getElementById('options-box');
+        optionsBox.innerHTML = "";
+
+        qData.o.forEach(opt => {
+            let btn = document.createElement('button');
+            btn.className = "option-btn";
             btn.innerText = opt;
-            btn.onclick = () => checkAnswer(opt, currentQuiz.answer);
-            container.appendChild(btn);
+            btn.onclick = function() { checkAnswer(opt, qData.a); };
+            optionsBox.appendChild(btn);
         });
     }
 
     function checkAnswer(selected, correct) {
-        if (selected === correct) {
-            coins += 10; // Sahi jawab par 10 coins
-            localStorage.setItem('user_coins', coins);
-            document.getElementById('coin-count').innerText = coins;
-            alert("🎉 Correct! You earned 10 coins.");
+        if(selected === correct) {
+            alert("✅ Sahi Jawab! +10 Coins");
+            updateCoins(10);
         } else {
-            alert("❌ Wrong answer! Try again.");
+            alert(`❌ Galat Jawab! Sahi jawab tha: ${correct}`);
         }
-        // Next question par jaane ke liye
-        currentQuizIndex = (currentQuizIndex + 1) % quizData.length;
-        loadQuiz();
+        currentQuestionIndex++;
+        loadQuestion();
     }
 
-    // Navigation Logic
-    function showSection(section) {
-        const contentDiv = document.getElementById('main-content');
-        if (section === 'game') {
-            contentDiv.innerHTML = `
-                <div class="game-box">
-                    <h3>🧠 Daily Quiz</h3>
-                    <p id="question">Loading...</p>
-                    <div id="options-container"></div>
-                </div>
-            `;
-            loadQuiz();
-        } else if (section === 'leaderboard') {
-            contentDiv.innerHTML = `
-                <div class="game-box">
-                    <h3>🏆 Top Users Leaderboard</h3>
-                    <p>1. Amit - 🪙 5000</p>
-                    <p>2. Rahul - 🪙 4200</p>
-                    <p>3. You (Local) - 🪙 ${coins}</p>
-                    <small style="color:gray;">*Real-time rank will sync after database connection.</small>
-                </div>
-            `;
-        } else if (section === 'help') {
-            contentDiv.innerHTML = `
-                <div class="game-box">
-                    <h3>❓ Help & Info</h3>
-                    <p><b>How to earn?</b> Play quizzes daily to earn coins.</p>
-                    <p><b>What are coins for?</b> Soon you can convert them to rewards or Telegram Stars!</p>
-                </div>
-            `;
+    // --- WORD GAME ENGINE ---
+    function startWordGame() {
+        showScreen('screen-word');
+        let randomIndex = Math.floor(Math.random() * wordDatabase.length);
+        currentWordObj = wordDatabase[randomIndex];
+        
+        document.getElementById('jumbled-text').innerText = currentWordObj.jumbled;
+        document.getElementById('word-hint').innerText = currentWordObj.hint;
+        document.getElementById('word-answer').value = "";
+    }
+
+    function checkWordAnswer() {
+        let userAns = document.getElementById('word-answer').value.trim().toLowerCase();
+        if(userAns === currentWordObj.correct.toLowerCase()) {
+            alert("🎉 Shandar! Sahi word dhoonda. +20 Coins");
+            updateCoins(20);
+            startWordGame(); // Load Next Word
+        } else {
+            alert("❌ Galat! Phir se koshish karo.");
         }
     }
 
-    // Initial Load
-    loadQuiz();
+    // --- LEADERBOARD & RANK ENGINE ---
+    function showLeaderboard() {
+        showScreen('screen-leaderboard');
+        let tbody = document.getElementById('leaderboard-body');
+        tbody.innerHTML = "";
+
+        // Merge Current User into Leaderboard array and Sort
+        let fullList = [...dummyLeaderboard, { name: currentUser + " (You)", coins: currentCoins }];
+        fullList.sort((a, b) => b.coins - a.coins);
+
+        fullList.forEach((user, index) => {
+            let row = `<tr>
+                <td><b>#${index + 1}</b></td>
+                <td>${user.name}</td>
+                <td>🪙 ${user.coins}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
 </script>
 </body>
- </html>
- 
+</html>
